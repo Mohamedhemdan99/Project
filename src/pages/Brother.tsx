@@ -9,62 +9,10 @@ import { signalRService } from '../services/signalRService';
 import { toast } from 'sonner';
 import { brotherService, CallHistoryDto } from '../services/BrotherService';
 // Mock data for people
-// const serverURL = "https://localhost:1190/";
-const serverURL = "https://bewtihme-001-site1.jtempurl.com/";
+import { AppConfig } from '../../config';
 
-// interface Person {
-//   id: string;
-//   name: string;
-//   username: string;
-//   avatar: string;
-//   status: 'online' | 'offline' | 'away';
-// }
+const serverURL = AppConfig.baseUrl;
 
-
-// const mockPeople: Person[] = [
-//   {
-//     id: '1',
-//     name: 'Adham',
-//     username: 'adham',
-//     avatar: '/lovable-uploads/01744b49-bc3d-47a4-b4ff-49ee164b9ba7.png',
-//     status: 'online'
-//   },
-//   {
-//     id: '2',
-//     name: 'Salma',
-//     username: 'salma',
-//     avatar: '/lovable-uploads/171d612a-355f-435f-8dca-624701830287.png',
-//     status: 'offline'
-//   },
-//   {
-//     id: '3',
-//     name: 'Nour',
-//     username: 'nour',
-//     avatar: '/lovable-uploads/19820934-c2d1-4a88-babe-dae50caea634.png',
-//     status: 'offline'
-//   },
-//   {
-//     id: '4',
-//     name: 'Nada',
-//     username: 'nada',
-//     avatar: '/lovable-uploads/8f75add4-3c0b-4bbd-8ee7-b1647ebdfb6d.png',
-//     status: 'away'
-//   },
-//   {
-//     id: '5',
-//     name: 'Salem',
-//     username: 'salem',
-//     avatar: '/lovable-uploads/80906287-ea24-4948-9b97-8e41512af654.png',
-//     status: 'offline'
-//   },
-//   {
-//     id: '6',
-//     name: 'Mohsen',
-//     username: 'mohsen',
-//     avatar: '/lovable-uploads/7803421c-dd1e-46c1-becb-34cd65708201.png',
-//     status: 'online'
-//   }
-// ];
 
 
 const Brother = () => {
@@ -72,18 +20,7 @@ const Brother = () => {
   const [Brother, setBrother] = useState<CallHistoryDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // const handleConnect = async (userId: string) => {
-  //   try {
-  //     // await signalRService.(userId);
-  //     // toast.success('Connection request sent');
-  //   } catch (error) {
-  //     console.error('Connection error:', error);
-  //     toast.error('Failed to send connection request');
-  //   }
-  // };
 
-  // get call history
-  
   useEffect(() => {
    setIsLoading(true);
    console.log("Fetching call history...");

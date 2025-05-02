@@ -51,6 +51,7 @@ export const profileService = {
   async getProfileData(): Promise<ProfileData> {
     try {
       const response = await api.get('/api/Profile',);
+      
       // console.log("ProfileService.jsx: getProfileData", response.data);
   
       // Validate the response data
@@ -190,6 +191,7 @@ async updateUserProfile(profileData: ProfileUpdateData) {
         'Content-Type': 'multipart/form-data',
       }
     });
+    
     
     // Update local storage with new user data if needed
     if (response.data) {

@@ -1,5 +1,10 @@
 import { formatDistanceToNow } from 'date-fns';
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
 
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
 export const getTimeAgo = (dateString: string | Date) => {
   try {
     const date = typeof dateString === 'string' ? new Date(dateString) : dateString;

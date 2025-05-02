@@ -30,6 +30,7 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen, onClo
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [emailError, setEmailError] = useState('');
   const [resetToken, setResetToken] = useState('');
+  
   const handleClose = () => {
     onClose();
     // Reset the form after closing

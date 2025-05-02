@@ -5,7 +5,7 @@ import { useLocation } from 'react-router-dom';
 
 // const API_BASE_URL = "https://bewtihme-001-site1.jtempurl.com";
 const API_BASE_URL = "https://localhost:1190";
-// const API_BASE_URL = "https://localhost:44319";
+
 // Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,

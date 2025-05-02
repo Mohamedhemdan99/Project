@@ -6,9 +6,9 @@ import { Bell, User, Globe } from 'lucide-react';
 import { useSignalR } from "../../hooks/useSignalR";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
-// const serverURL = "https://localhost:1190/";
-const serverURL = "https://bewtihme-001-site1.jtempurl.com/";
+import { AppConfig } from '../../../config';
 
+const serverURL = AppConfig.baseUrl;
 
 const Navbar: React.FC = () => {
   const { isAuthenticated, user, logout } = useAuth();
@@ -17,6 +17,8 @@ const Navbar: React.FC = () => {
   const location = useLocation();
   const logoImage = "uploads/imgs/logo.png";
   const defaultImageUrl = "uploads/imgs/default.jpg";
+
+  console.log("Navbar Profile Image URL:", user?.profileImageUrl)
 
   return (
     <nav className="bg-white shadow-sm fixed w-full z-50 top-0">

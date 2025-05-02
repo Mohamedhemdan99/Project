@@ -10,6 +10,7 @@ import { useAuth } from '../hooks/useAuth';
 import { getTimeAgo } from '@/utils/dateUtils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useSignalR } from '../hooks/useSignalR';
+import { AppConfig } from '../../config';
 
 const Notifications = () => {
   const [loading, setLoading] = useState(false);
@@ -17,8 +18,9 @@ const Notifications = () => {
   const {user} = useAuth();
   const {hasUnreadNotifications,setHasUnreadNotifications} = useSignalR();
   
-  // const serverURL = "https://localhost:1190/";
-  const serverURL = "https://bewtihme-001-site1.jtempurl.com/";
+
+
+const serverURL = AppConfig.baseUrl;
 
   useEffect(()=>{
     const fetchNotificationData = async () => {

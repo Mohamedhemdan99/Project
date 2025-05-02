@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { SelectValue } from '@/components/ui/select copy';
+import { AppConfig } from '../../config';
 
 const Profile = () => {
   const { logout, user } = useAuth();
@@ -33,8 +34,7 @@ const Profile = () => {
     confirmPassword: ''
   });
 
-  // const serverURL = "https://localhost:1190/";
-  const serverURL = "https://bewtihme-001-site1.jtempurl.com/";
+  const serverURL = AppConfig.baseUrl;
 
   // Fetch profile data from the backend
   useEffect(() => {

@@ -20,6 +20,8 @@ import NotFound from "./pages/NotFound";
 import Notifications from "./pages/Notifications";
 import Translation from "./pages/Translation";
 import { SignalRProvider } from './contexts/SignalRProvider.tsx';
+import ReceiveCall from './pages/ReceiveCall';
+import VideoCallScreen from "./pages/VideoCallScreen.tsx";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +33,8 @@ const App = () => (
           <AuthProvider>
             <SignalRProvider>
               <Routes>
+                <Route path="/VideoCallScreen" element={<VideoCallScreen />} />
+                {/* <Route path="/receive-call" element={<ReceiveCall />} /> */}
                 <Route
                   element={
                     <>
@@ -51,6 +55,7 @@ const App = () => (
                 <Route path="*" element={<NotFound />} />
                 </Route>
               </Routes>
+              <ReceiveCall />
             </SignalRProvider>
           </AuthProvider>
       </BrowserRouter>

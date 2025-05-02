@@ -25,8 +25,9 @@ interface Post {
   isAccepted: boolean;
 }
 
-// const serverURL = "https://localhost:1190/";
-const serverURL = "https://bewtihme-001-site1.jtempurl.com/";
+import { AppConfig } from '../../config';
+
+const serverURL = AppConfig.baseUrl;
 
 
 const Home = () => {
@@ -68,12 +69,7 @@ const Home = () => {
       }
     };
     fetchPosts();
-    console.log("IsConnected: ",isConnected)
-
-    if (!isConnected) {
-      // Initialize SignalR connection on mount
-    }
-    
+ 
     return () => {
       console.log("end fetch posts");
       isMounted = false;
@@ -118,7 +114,7 @@ const Home = () => {
       toast.error('Failed to ignore post', { icon: '😥' });
     }
   };
-
+// console.log(isConnected);
   const handleRetry = async () => {
     setError('');
     try {

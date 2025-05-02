@@ -7,13 +7,9 @@ import { User } from 'lucide-react';
 import historyService, { CallHistory } from '../services/historyService';
 import { toast } from 'sonner';
 
+import { AppConfig } from '../../config';
 
-
-
-// const serverURL = "https://localhost:1190/";
-const serverURL = "";
-
-
+const serverURL = AppConfig.baseUrl;
 
 const History = () => {
 const [History, setHistory] = useState<CallHistory[]>([]);

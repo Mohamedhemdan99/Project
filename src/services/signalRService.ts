@@ -1,7 +1,7 @@
 import { HttpTransportType, HubConnection, HubConnectionBuilder, LogLevel } from '@microsoft/signalr';
+import { AppConfig } from '../../config';
 
-const serverURL = "https://bewtihme-001-site1.jtempurl.com/";
-// const serverURL = "https://localhost:1190/"
+const serverURL = AppConfig.baseUrl;
 
 export const signalRService = {
   connection: null as HubConnection | null,
@@ -31,7 +31,7 @@ export const signalRService = {
   },
 
   async stopConnection(): Promise<void> {
-    if (this.connection) {
+    if (this.connection?.connectionId) {
       await this.connection.stop();
     }
   },
@@ -42,7 +42,7 @@ export const signalRService = {
   },
   
   async joinOnlineHelpersGroup(): Promise<void> {
-    if (this.connection.connectionId) {
+    if (this.connection?.connectionId) {
       // console.log(this.connection.connectionId);
 
       await this.connection.invoke('JoinOnlineHelpersGroup');
@@ -50,8 +50,32 @@ export const signalRService = {
     }
   },
 
+  async subscribetoIncomingCall(handler: (data: any) => void): Promise<void> {
+    if (this.connection?.connectionId) {
+      // console.log('SignalR Service: Subscribing to IncomingCall', this.connection.connectionId);
+      this.connection.on('IncomingCall',handler);
+        //  (data) => {
+      //   console.log('SignalR Service: IncomingCall event received:', data);
+      //   console.log("Data.AppId:",data.appId);
+      //   // window.location.href = '/receive-call';
+      //   // handler(data);
+      // });
+    } else {
+      console.error('SignalR Service: No SignalR connection available');
+    }
+  },
+
+  async unsubscribeFromIncomingCall(): Promise<void> {
+    if (this.connection?.connectionId) {
+      console.log('SignalR Service: Unsubscribing from IncomingCall');
+      this.connection.off('IncomingCall');
+    } else {
+      console.error('SignalR Service: No SignalR connection available');
+    }
+  },
+
   async subscribeToNewPostCreated(handler: (data: any) => void): Promise<void> {
-    if (this.connection.connectionId) {
+    if (this.connection?.connectionId) {
       console.log('SignalR Service: Subscribing to NewPostCreated');
       this.connection.on('NewPostCreated', (data) => {
         console.log('SignalR Service: NewPostCreated event received:', data);
@@ -63,7 +87,7 @@ export const signalRService = {
   },  
   // impelement UnSubscribetoNewPostCreated()
 async unsubscribeFromNewPostCreated(handler: () => void): Promise<void> {
-  if (this.connection.connectionId) {
+  if (this.connection?.connectionId) {
     this.connection.off('NewPostCreated', handler);
     console.log('SignalR Service: Unsubscribed from NewPostCreated');
   }  
@@ -74,7 +98,7 @@ async unsubscribeFromNewPostCreated(handler: () => void): Promise<void> {
 
   // implement leave online helpers group
   async leaveOnlineHelpersGroup(): Promise<void> {
-    if (this.connection.connectionId) {
+    if (this.connection?.connectionId) {
       await this.connection.invoke('LeaveOnlineHelpersGroup');
       console.log(`User${localStorage.getItem("userId")} Left OnlineHelpersGroup"`);
     }
