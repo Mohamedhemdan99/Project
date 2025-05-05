@@ -2,10 +2,7 @@
 import { toast } from "sonner";
 import axios from "axios";
 import api  from "./axiosService";
-// import { EditableUserProfile, UserProfile } from "./authService";
 
-// const API_URL = "https://bewtihme-001-site1.jtempurl.com/api/profile";
-// const API_URL = "https://localhost:1190";
 export interface ProfileData {
   userId: string;
   userName: string;
@@ -68,7 +65,7 @@ export const profileService = {
       if (response.data.profileImageUrl) {
         localStorage.setItem('profileImageUrl', JSON.stringify(response.data.profileImageUrl));
       }
-  
+      
       // Store the full user data in localStorage
       localStorage.setItem('user', JSON.stringify(response.data));
       // console.log(JSON.parse(localStorage.getItem('user')))
@@ -115,35 +112,6 @@ export const profileService = {
   },
 
 
-//   async updateProfile(userData: EditableUserProfile) {
-//   try {
-//     const data = new FormData();
-    
-//     // Append all user data that's being updated
-//     Object.entries(userData).forEach(([key, value]) => {
-//       if (key === 'profileImageUrl' && value instanceof File) {
-//         data.append('profileImageUrl', value);
-//       } else if (value !== null && value !== undefined) {
-//         data.append(key, String(value));
-//       }
-//     });
-
-//     console.log("ProfileService.jsx: data before updating", data);
-    
-//     const response = await api.put('/api/Profile', data, {
-//       headers: { 'Content-Type': 'multipart/form-data' }
-//     });
-    
-//     // Return the complete updated profile data
-//     return response.data;
-//   } catch (error) {
-//     if (axios.isAxiosError(error)) {
-//       const message = error.response?.data?.message || 'Profile update failed';
-//       toast.error(message);
-//     }
-//     throw error;
-//   }
-// },
 
 async updateUserProfile(profileData: ProfileUpdateData) {
   try {

@@ -37,6 +37,8 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
             const userData = JSON.parse(storedUser);
             setUser(userData);
             console.log("checkAuthStatus: Using stored user data", userData);
+            localStorage.setItem('imageURL', userData.profileImageUrl);
+            localStorage.setItem('fullName', userData.fullName);
           } catch (error) {
             console.error('Error parsing stored user data:', error);
             // Try to fetch fresh data if parsing fails
@@ -46,7 +48,9 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
                 setUser(freshUserData);
                 localStorage.setItem('user', JSON.stringify(freshUserData));
                 console.log("checkAuthStatus: Using fresh user data", freshUserData);
-              }
+                localStorage.setItem('imageURL', freshUserData.profileImageUrl);
+                localStorage.setItem('fullName', freshUserData.fullName);
+                }
             } catch (fetchError) {
               console.error('Error fetching fresh user data:', fetchError);
               // Clear invalid session data
@@ -66,6 +70,8 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
               setUser(freshUserData);
               localStorage.setItem('user', JSON.stringify(freshUserData));
               console.log("checkAuthStatus: Using fresh user data", freshUserData);
+              localStorage.setItem('imageURL', freshUserData.profileImageUrl);
+              localStorage.setItem('fullName', freshUserData.fullName);
             }
           } catch (error) {
             console.error('Error fetching user data:', error);
@@ -98,7 +104,9 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
         setToken(response.token);
         localStorage.setItem('token', response.token);
         localStorage.setItem('userId', response.userId);
-
+        // localStorage.setItem('imageURL', response.imageURL);
+        // localStorage.setItem('fullName', response.fullName);
+        
         // Fetch and store user profile
         const userData = await profileService.getProfileData();
         if (userData) {

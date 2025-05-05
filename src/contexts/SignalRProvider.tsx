@@ -7,6 +7,9 @@ import { useAuth } from '@/hooks/useAuth.ts';
 import ReceiveCall from '@/pages/ReceiveCall.tsx';
 
 
+const DISABLED_ROUTES = ['/VideoCallScreen', '/Translation'];   // added
+
+
 export function SignalRProvider({ children }: { children: React.ReactNode }) {
   const [isConnected, setIsConnected] = useState(false);
   const [ hasAcall, setHasAcall] = useState(false);
@@ -18,8 +21,16 @@ const[ChannelName, setChannelName] = useState('');
 const[AppId, setAppId] = useState('');
 const[Uid, setUid] = useState(0);
 const[PatientImage, setPatientImage] = useState('');
+const[ReceiverName, setReceiverName] = useState('');
 
+const isDisabledRoute = DISABLED_ROUTES.includes(location.pathname);   // added
 
+useEffect(() => {
+  // If we navigate to a disabled route, reset the call state
+  if (isDisabledRoute && hasAcall) {
+    setHasAcall(false);
+  }
+}, [location.pathname, isDisabledRoute, hasAcall]);
   useEffect(() => {
     let mounted = true;
 
@@ -39,6 +50,7 @@ const[PatientImage, setPatientImage] = useState('');
         await signalRService.joinOnlineHelpersGroup();
 
         if (!mounted) return;
+
         // Subscribe to new post notifications
         await signalRService.subscribeToNewPostCreated((data) => {
           if (!mounted) return;
@@ -64,15 +76,21 @@ const[PatientImage, setPatientImage] = useState('');
 
         await signalRService.subscribetoIncomingCall((data) => {
           if (!mounted) return;
+       
+          // Skip processing incoming calls if on a disabled route
+          if (isDisabledRoute) {
+            console.log('SignalRProvider: Ignoring incoming call - on disabled route:', location.pathname);
+            return;
+          }
           console.log('SignalRProvider: Incoming call notification received:', data);
          
+          
           setHasAcall(true);
           setName(data.patientName);
           setChannelName(data.channelName);
           setAppId(data.appId);
           setUid(data.uid);
           setPatientImage(data.imageURL);
-
           console.log(data.appId);
           // console.log(data.patientName);
           console.log(data.channelName);
@@ -115,11 +133,12 @@ const[PatientImage, setPatientImage] = useState('');
         setIsConnected(false);
       }
     };
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, isDisabledRoute, location.pathname]);
 
   return (
     <SignalRContext.Provider value={{ isConnected, PatientName, ChannelName, AppId, Uid, PatientImage, setHasAcall, hasAcall,hasUnreadNotifications, setHasUnreadNotifications }}>
       {children}
+      {hasAcall && !isDisabledRoute && <ReceiveCall />}
     </SignalRContext.Provider>
   );
 };

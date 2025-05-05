@@ -3,8 +3,8 @@ import { toast } from "sonner";
 import { authService } from './authService';
 import { useLocation } from 'react-router-dom';
 
-// const API_BASE_URL = "https://bewtihme-001-site1.jtempurl.com";
-const API_BASE_URL = "https://localhost:1190";
+const API_BASE_URL = "https://bewtihme-001-site1.jtempurl.com";
+// const API_BASE_URL = "https://localhost:1190";
 
 // Create axios instance
 const api = axios.create({

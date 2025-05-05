@@ -1,4 +1,4 @@
-import { HttpTransportType, HubConnection, HubConnectionBuilder, LogLevel } from '@microsoft/signalr';
+import { HttpTransportType, HubConnection, HubConnectionBuilder, HubConnectionState, LogLevel } from '@microsoft/signalr';
 import { AppConfig } from '../../config';
 
 const serverURL = AppConfig.baseUrl;
@@ -28,6 +28,10 @@ export const signalRService = {
     await this.connection.start();
     // console.log("Connection Id From SignalRService:",this.connection.connectionId);
     // Handle connection events
+  },
+
+  isConnected(): boolean {
+    return this.connection?.state === HubConnectionState.Connected;
   },
 
   async stopConnection(): Promise<void> {

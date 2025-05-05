@@ -8,102 +8,75 @@ import { useNavigate } from "react-router-dom";
 import AgoraRTC, { IAgoraRTCClient, ILocalTrack, IRemoteTrack } from "agora-rtc-sdk-ng";
 import { useSignalR } from "@/hooks/useSignalR";
 import api from "@/services/axiosService";
-// import { formatDuration, getMockParticipants } from "../services/agoraConfig";
 
 export const VideoCallScreen: React.FC = () => {
-  // Local state variables
-  const [participants, setParticipants] = useState([]);
-  const [isMuted, setIsMuted] = useState(true);
-  const [isVideoOn, setIsVideoOn] = useState(false);
+  const [participants, setParticipants] = useState<any[]>([]);
+  const [isCallConnected, setIsCallConnected] = useState(false);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
-  const [joinAnimation, setJoinAnimation] = useState(false);
-  const [activeSpeaker, setActiveSpeaker] = useState<string | null>("1"); // Mock active speaker
+  const [activeSpeaker, setActiveSpeaker] = useState<string | null>(null);
   const [pinnedParticipantId, setPinnedParticipantId] = useState<string | null>(null);
-  const [callDuration, setCallDuration] = useState(0);
+  const navigate = useNavigate();
   const clientRef = useRef(null);
+  const { AppId, ChannelName, Uid } = useSignalR();
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [localAudioTrack, setLocalAudioTrack] = useState<ILocalTrack | null>(null);
   const [localVideoTrack, setLocalVideoTrack] = useState<ILocalTrack | null>(null);
+  const [isMicOn, setIsMicOn] = useState(false);
+  const [isVideoOn, setIsVideoOn] = useState(false);
   const [audioLevels, setAudioLevels] = useState<{ [key: string]: number }>({});
-  const [isCallConnected, setIsCallConnected] = useState(false);
-  const { AppId, ChannelName,PatientImage,PatientName } = useSignalR();
-  
 
-
-
-
-
-
-  // join new user to the call
   useEffect(() => {
     const client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
     clientRef.current = client;
-    AgoraRTC.setLogLevel(4);
+    console.log("uid", Uid)
+    AgoraRTC.setLogLevel(0);
     const joinChannel = async () => {
       try {
-        console.log("Joining channel with AppId:", AppId, "ChannelName:", ChannelName);
-        const Uid = await client.join(AppId, ChannelName, null, null);
-        console.log("Joined channel with UID:", Uid);
+        await client.join(AppId, ChannelName, null, Uid);
 
         // Create and publish local tracks
         const [microphoneTrack, cameraTrack] = await AgoraRTC.createMicrophoneAndCameraTracks();
-       
         microphoneTrack.setEnabled(false);
         cameraTrack.setEnabled(false);
-
         setLocalAudioTrack(microphoneTrack);
         setLocalVideoTrack(cameraTrack);
         
-        await client.publish([microphoneTrack, cameraTrack]);
-        console.log("Published local tracks");
+        console.log(await client.publish([microphoneTrack, cameraTrack]));
 
         // Initialize local participant
         setParticipants([
           {
             id: Uid,
-            name: localStorage.getItem("fullName"),
+            name: "You",
             isSelf: true,
-            isMuted: isMuted,
+            isMuted: !isMicOn,
             isVideoOn: isVideoOn,
             videoTrack: cameraTrack,
             audioTrack: microphoneTrack,
-            imageURL: localStorage.getItem("imageURL"),
           },
         ]);
 
         // Enable active speaker detection
         client.enableAudioVolumeIndicator();
         
-        // Listen for active speaker with improved handler
-client.on("volume-indicator", (volumes) => {
-  if (volumes.length === 0) return;
-  
-  // Find the loudest participant above threshold
-  const threshold = 5; // Minimum audio level to be considered "speaking"
-  const sortedVolumes = [...volumes].sort((a, b) => b.level - a.level);
-  
-  // Only update active speaker if someone is actually talking
-  if (sortedVolumes[0] && sortedVolumes[0].level > threshold) {
-    // Convert to string for consistent comparisons
-    const loudestUid = String(sortedVolumes[0].uid);
-    console.log("Active speaker detected:", loudestUid, "level:", sortedVolumes[0].level);
-    setActiveSpeaker(loudestUid);
-  } else if (sortedVolumes.every(v => v.level <= threshold)) {
-    // No one is speaking loud enough
-    setActiveSpeaker(null);
-  }
-  
-  // Store audio levels for all participants
-  const levels: { [key: string]: number } = {};
-  volumes.forEach((volume) => {
-    levels[String(volume.uid)] = Math.min(100, Math.round(volume.level * 1.2));
-  });
-  setAudioLevels(levels);
-});
+        // Listen for active speaker
+        client.on("active-speaker", (uid) => {
+          console.log("Active speaker:", uid);
+          setActiveSpeaker(uid);
+        });
+
+        // Set up volume indicator
+        client.on("volume-indicator", (volumes) => {
+          const levels: { [key: string]: number } = {};
+          volumes.forEach((volume) => {
+            levels[volume.uid] = Math.min(100, Math.round(volume.level * 1.2));
+          });
+          setAudioLevels(levels);
+        });
 
         // Handle remote user joining - FIXED THIS PART
         client.on("user-joined", (user) => {
           console.log("User joined:", user.uid);
-
           // Add user to participants even before they publish media
           setParticipants((prev) => {
             // Check if the user already exists in the participant list
@@ -112,13 +85,12 @@ client.on("volume-indicator", (volumes) => {
                 ...prev,
                 {
                   id: user.uid,
-                  name: PatientName || "",
+                  name: `User ${user.uid}`,
                   isSelf: false,
                   isMuted: true,
                   isVideoOn: false,
                   videoTrack: null,
                   audioTrack: null,
-                  imageURL: PatientImage || "",
                 }
               ];
             }
@@ -127,14 +99,8 @@ client.on("volume-indicator", (volumes) => {
         });
 
         // Handle remote user publishing media
-        client.on("user-published", async (user, mediaType) => {          
+        client.on("user-published", async (user, mediaType) => {
           await client.subscribe(user, mediaType);
-          console.log("Subscribed to", mediaType, "track from user", user.uid);
-
-          if (mediaType === "audio" && user.audioTrack) {
-            // Play audio immediately after subscribing
-            user.audioTrack.play();
-          }
           
           setParticipants((prev) => {
             const existing = prev.find((p) => p.id === user.uid);
@@ -145,7 +111,7 @@ client.on("volume-indicator", (volumes) => {
                 if (p.id === user.uid) {
                   const updates = {
                     ...p,
-                    name: p.name || localStorage.getItem("fullName"),
+                    name: p.name || `User ${user.uid}`,
                   };
                   
                   if (mediaType === "video") {
@@ -168,13 +134,12 @@ client.on("volume-indicator", (volumes) => {
               // Create new participant if they don't exist yet
               const newParticipant = {
                 id: user.uid,
-                name: localStorage.getItem("fullName"),
+                name: `User ${user.uid}`,
                 isSelf: false,
                 isMuted: mediaType !== "audio",
                 isVideoOn: mediaType === "video",
                 videoTrack: mediaType === "video" ? user.videoTrack : null,
                 audioTrack: mediaType === "audio" ? user.audioTrack : null,
-                imageURL: PatientImage,
               };
               
               // Play audio if available
@@ -210,8 +175,6 @@ client.on("volume-indicator", (volumes) => {
         client.on("user-left", (user) => {
           console.log("User left:", user.uid);
           setParticipants((prev) => prev.filter((p) => p.id !== user.uid));
-          // Reset active speaker if the leaving user was the active speaker
-          setActiveSpeaker(prev => prev === String(user.uid) ? null : prev);
         });
 
         toast.success("Connected to call");
@@ -223,51 +186,52 @@ client.on("volume-indicator", (volumes) => {
     };
 
     joinChannel();
-    setJoinAnimation(true);
 
     return () => {
       if (clientRef.current) {
         clientRef.current.off("active-speaker");
         clientRef.current.off("volume-indicator");
-        clientRef.current.removeAllListeners();
-        clientRef.current.leave().then(() => {
-          console.log("Client left channel");
-        }).catch(err => {
-          console.error("Error leaving channel:", err);
-        });
-      }
-      
-      // Clean up local tracks
-      if (localAudioTrack) {
-        localAudioTrack.stop();
-        localAudioTrack.close();
-      }
-      
-      if (localVideoTrack) {
-        localVideoTrack.stop();
-        localVideoTrack.close();
+        clientRef.current.leave();
       }
     };
-      
-  }, [AppId, ChannelName]);
+  }, [AppId, ChannelName, Uid]);
 
-
-
-
-
-
-
-
-
-
-  // Call duration timer
+  // Timer for call duration
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCallDuration(prev => prev + 1);
-    }, 1000);
-    
-    return () => clearInterval(timer);
-  }, []);
+    if (isCallConnected) {
+      const timer = setInterval(() => {
+        setElapsedSeconds((prev) => prev + 1);
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [isCallConnected]);
+
+  // Pin active speaker
+  useEffect(() => {
+    if (activeSpeaker && activeSpeaker !== pinnedParticipantId) {
+      setPinnedParticipantId(activeSpeaker);
+    }
+  }, [activeSpeaker, pinnedParticipantId]);
+
+  // Toggle local mic
+  useEffect(() => {
+    if (localAudioTrack) {
+      localAudioTrack.setEnabled(isMicOn);
+      setParticipants((prev) =>
+        prev.map((p) => (p.isSelf ? { ...p, isMuted: !isMicOn } : p))
+      );
+    }
+  }, [isMicOn, localAudioTrack]);
+
+  // Toggle local camera
+  useEffect(() => {
+    if (localVideoTrack) {
+      localVideoTrack.setEnabled(isVideoOn);
+      setParticipants((prev) =>
+        prev.map((p) => (p.isSelf ? { ...p, isVideoOn } : p))
+      );
+    }
+  }, [isVideoOn, localVideoTrack]);
 
   const formatDuration = (seconds: number) => {
     const hrs = Math.floor(seconds / 3600);
@@ -276,50 +240,10 @@ client.on("volume-indicator", (volumes) => {
     return `${hrs.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
- 
+  const toggleMic = () => setIsMicOn((prev) => !prev);
+  const toggleVideo = () => setIsVideoOn((prev) => !prev);
 
-  // Local control handlers
-  const toggleMute = () => {
-    if (localAudioTrack) {
-      if (localAudioTrack.enabled) {
-        localAudioTrack.setEnabled(false);
-      } else {
-        localAudioTrack.setEnabled(true);
-      }
-    }
-    setIsMuted(!isMuted);
-    
-    // Update local participant
-    setParticipants(prev => 
-      prev.map(p => 
-        p.isSelf ? { ...p, isMuted: !isMuted } : p
-      )
-    );
-    
-    toast(isMuted ? "Microphone turned on" : "Microphone muted");
-  };
   
-  const toggleVideo = () => {
-    if (localVideoTrack) {
-      if (localVideoTrack.enabled) {
-        localVideoTrack.setEnabled(false);
-      } else {
-        localVideoTrack.setEnabled(true);
-      }
-    }
-    setIsVideoOn(!isVideoOn);
-    
-    // Update local participant
-    setParticipants(prev => 
-      prev.map(p => 
-        p.isSelf ? { ...p, isVideoOn: !isVideoOn } : p
-      )
-    );
-    
-    toast(isVideoOn ? "Camera turned off" : "Camera turned on");
-  };
-  
-  //done  work code under it
   const toggleScreenShare = async () => {
     if (!isScreenSharing) {
       try {
@@ -362,53 +286,33 @@ client.on("volume-indicator", (volumes) => {
       }
     }
   };
-    // setIsScreenSharing(!isScreenSharing);
-    // toast(isScreenSharing ? "Screen sharing stopped" : "Screen sharing started");
 
-  
-  //done
   const togglePin = () => {
-    // Find self ID
-    const selfId = participants.find(p => p.isSelf)?.id;
+    const selfId = participants.find((p) => p.isSelf)?.id;
     if (pinnedParticipantId === selfId) {
       setPinnedParticipantId(null);
       toast("Your video unpinned");
     } else {
-      setPinnedParticipantId(selfId || null);
+      setPinnedParticipantId(selfId);
       toast("Your video pinned");
     }
   };
-  
-  //done
+
   const togglePinForParticipant = (participantId: string) => {
     if (pinnedParticipantId === participantId) {
       setPinnedParticipantId(null);
       toast("Video unpinned");
     } else {
       setPinnedParticipantId(participantId);
-      const participant = participants.find(p => p.id === participantId);
+      const participant = participants.find((p) => p.id === participantId);
       toast(`${participant?.name}'s video pinned`);
     }
   };
-  
-  //done
+
   const leaveCall = async () => {
-    if (!clientRef.current){
-      window.location.href = "/home";
-      return;
-    }
     if (!ChannelName) {
       window.location.href = "/home";
       return;
-    }
-    if (localAudioTrack) {
-      localAudioTrack.stop();
-      localAudioTrack.close();
-    }
-    
-    if (localVideoTrack) {
-      localVideoTrack.stop();
-      localVideoTrack.close();
     }
     
     try {
@@ -420,29 +324,24 @@ client.on("volume-indicator", (volumes) => {
     if (clientRef.current) {
       clientRef.current.leave();
     }
-    setLocalAudioTrack(null);
-    setLocalVideoTrack(null);
-    setIsCallConnected(false);
     
     window.location.href = "/home";
   };
-  
-  // Find self ID
-  const selfId = participants.find(p => p.isSelf)?.id;
+
+  const selfId = participants.find((p) => p.isSelf)?.id;
   const isSelfPinned = selfId === pinnedParticipantId;
-  
+
   return (
-    <div className={`flex flex-col h-screen bg-gray-950 text-[#93C5FD] transition-opacity duration-500 ${joinAnimation ? 'opacity-100' : 'opacity-0'}`}>
-      <VideoCallHeader 
-        callTitle="Team Weekly Sync"
+    <div className="flex flex-col h-screen bg-video-dark">
+      <VideoCallHeader
+        callTitle="Be With Me"
         participantCount={participants.length}
-        duration={formatDuration(callDuration)}
+        duration={formatDuration(elapsedSeconds)}
       />
-      
       <div className="flex flex-1 overflow-hidden">
-        {/* Main video container */}
-        <VideoContainer 
-          participants={participants} 
+        <VideoContainer
+          audioLevels={audioLevels}
+          participants={participants}
           activeSpeakerId={activeSpeaker}
           isScreenSharing={isScreenSharing}
           selfVideoEnabled={isVideoOn}
@@ -450,23 +349,20 @@ client.on("volume-indicator", (volumes) => {
           onTogglePin={togglePinForParticipant}
           className="flex-1"
         />
-        
-        {/* Participants sidebar */}
-        <VideoParticipantList 
+        <VideoParticipantList
           participants={participants}
           activeSpeakerId={activeSpeaker}
           pinnedParticipantId={pinnedParticipantId}
+          audioLevels={audioLevels}
           onTogglePin={togglePinForParticipant}
         />
       </div>
-      
-      {/* Controls */}
-      <VideoControls 
-        isMuted={isMuted}
-        isVideoOn={isVideoOn}
+      <VideoControls
         isScreenSharing={isScreenSharing}
         isPinned={isSelfPinned}
-        onToggleMute={toggleMute}
+        isMicOn={isMicOn}
+        isVideoOn={isVideoOn}
+        onToggleMute={toggleMic}
         onToggleVideo={toggleVideo}
         onToggleScreenShare={toggleScreenShare}
         onTogglePin={togglePin}

@@ -1,12 +1,14 @@
 
 import React from "react";
 import { BadgeCheck, Mic, MicOff, Video, VideoOff, Pin, PinOff } from "lucide-react";
+import { useCallSettings } from '@/contexts/CallSettingsContext';
 import { useSignalR } from "@/hooks/useSignalR";
 import { AppConfig } from "../../../config";
 interface VideoParticipantListProps {
   participants: any[];
   activeSpeakerId: string | null;
   pinnedParticipantId: string | null;
+  audioLevels: { [key: string]: number };
   onTogglePin: (participantId: string) => void;
 }
 
@@ -14,73 +16,71 @@ export const VideoParticipantList: React.FC<VideoParticipantListProps> = ({
   participants,
   activeSpeakerId,
   pinnedParticipantId,
+  audioLevels,
   onTogglePin,
 }) => {
-  const serverURL = AppConfig.baseUrl;
+const {PatientImage} = useSignalR();
+const serverURL = AppConfig.baseUrl;
   return (
-    <div className="w-72 bg-gray-900 shadow-lg border-l border-gray-800 hidden lg:block overflow-hidden animate-slide-up" style={{ animationDelay: "0.4s", opacity: 0 }}>
+    <div className="w-72 bg-gray-900/80 backdrop-blur-sm border-l border-gray-800 hidden lg:block overflow-hidden animate-slide-up" style={{ animationDelay: "0.4s", opacity: 0 }}>
       <div className="px-4 py-3 border-b border-gray-800">
-        <h3 className="text-[#93C5FD] font-medium">Participants ({participants.length})</h3>
+        <h3 className="text-white font-medium">Participants ({participants.length})</h3>
       </div>
       
       <div className="px-2 py-2 overflow-y-auto h-full max-h-[calc(100vh-10rem)]">
         {participants.map((participant, index) => {
-
-         const participantId = String(participant.id);
-         const activeId = activeSpeakerId ? String(activeSpeakerId) : null;
-         const isActive = participantId === activeId;
-         const isPinned = participantId === pinnedParticipantId;
-         const delay = 0.5 + index * 0.1;
-            
-       
+          const isActive = participant.id === activeSpeakerId;
+          const isPinned = participant.id === pinnedParticipantId;
+          const delay = 0.5 + index * 0.1;
+          console.log("isActive",isActive)
           return (
             <div 
               key={participant.id}
               className={`flex items-center gap-3 p-2 rounded-md mb-1 transition-colors ${
-                isActive ? "bg-blue-900/30" : "hover:bg-gray-800"
-              } ${isPinned ? "ring-1 ring-[#93C5FD]" : ""}`}
-              style={{ 
-                animation: `slide-up 0.3s ease-out ${delay}s forwards`,
-                opacity: 0
-              }}
+                isActive ? "bg-video-primary/20" : "hover:bg-gray-800/50"
+              } ${isPinned ? "ring-1 ring-video-primary" : ""}`}
+              style={{ animation: `slide-up 0.3s ease-out ${delay}s forwards`, opacity: 0 }}
             >
               {/* Avatar */}
               <div className="relative">
-                {participant.isVideoOn ? (
-                  <div className="h-10 w-10 rounded-full overflow-hidden bg-gray-800">
-                    <div className="h-full w-full flex items-center justify-center bg-blue-600 text-white font-semibold">
-                     <img src={serverURL + participant.imageURL} alt="" className="h-10 w-10 rounded-full object-cover"/>
-                    </div>
-                  </div>
+                { PatientImage !== undefined && PatientImage !== null ?(
+                  <div className="h-10 w-10 rounded-full overflow-hidden bg-gray-700">
+                   
+                   <img 
+                   src={serverURL+PatientImage} 
+                   alt="" className="h-full w-full object-cover" 
+                   /> 
+                   </div>
                 ) : (
-                  <div className="h-10 w-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold">
-                    <img src={serverURL +  participant.imageURL} alt="" className="h-10 w-10 rounded-full object-cover"/>
-                    {/* {participant.name.charAt(0)} */}
+                  <div className="h-10 w-10 rounded-full bg-video-secondary flex items-center justify-center text-white font-semibold">
+                    {participant.name.charAt(0)}
                   </div>
                 )}
                 
                 {/* Active speaker indicator */}
                 {isActive && (
-                  <>
-                    <span className="absolute inset-0 rounded-full animate-pulse-ring border-2 border-[#93C5FD]"></span>
-                    <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-gray-900"></span>
-                  </>
+                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-video-primary/50">
+                    <div 
+                      className="h-full bg-video-primary transition-all duration-100"
+                      style={{ width: `${audioLevels[participant.id] || 0}%` }}
+                    />
+                  </div>
                 )}
               </div>
               
               {/* Name */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center">
-                  <span className="text-[#EFF6FF] text-sm font-medium truncate">
+                  <span className="text-white text-sm font-medium truncate">
                     {participant.name} {participant.isSelf && '(You)'}
                   </span>
                   
                   {participant.isHost && (
-                    <BadgeCheck size={14} className="ml-1 text-[#93C5FD]" />
+                    <BadgeCheck size={14} className="ml-1 text-video-primary" />
                   )}
                 </div>
                 
-                <div className="text-[#93C5FD] text-opacity-70 text-xs">
+                <div className="text-gray-400 text-xs">
                   {isActive ? "Speaking" : "Not speaking"}
                 </div>
               </div>
@@ -110,10 +110,10 @@ export const VideoParticipantList: React.FC<VideoParticipantListProps> = ({
                 {/* Pin button */}
                 <button 
                   onClick={() => onTogglePin(participant.id)}
-                  className="p-1 rounded-full hover:bg-gray-700"
+                  className="p-1 rounded-full hover:bg-gray-800"
                 >
                   {isPinned ? (
-                    <PinOff size={14} className="text-[#93C5FD]" />
+                    <PinOff size={14} className="text-video-primary" />
                   ) : (
                     <Pin size={14} className="text-gray-400" />
                   )}

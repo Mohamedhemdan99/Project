@@ -12,7 +12,7 @@ const CallSettingsContext = createContext<CallSettingsContextType | null>(null);
 
 export const CallSettingsProvider = ({ children }: { children: React.ReactNode }) => {
   const [isMicOn, setIsMicOn] = useState(true);
-  const [isVideoOn, setIsVideoOn] = useState(true);
+  const [isVideoOn, setIsVideoOn] = useState(false);
 
   const toggleMic = () => setIsMicOn(prev => !prev);
   const toggleVideo = () => setIsVideoOn(prev => !prev);
